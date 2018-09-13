@@ -1,9 +1,3 @@
-open62541 on ESP32 (Sparkfun Thing)
+#ESP32 - OPCUA
 
-Reference:
-
-https://github.com/open62541/open62541.git
-
-and 
-
-https://github.com/Gfast2/open62541_port.git
+This is OPCUA Pub/Sub publisher on ESP32 based on https://github.com/open62541.
