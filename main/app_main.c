@@ -192,6 +192,8 @@ void opcua_task(void *pvParameter) {
         UA_ServerConfig_delete(config);
         return;
     }
+    UA_String esp32url = UA_String_fromChars("opc.udp://espressif:4840");
+    config->applicationDescription.discoveryUrls = &esp32url;
     config->pubsubTransportLayers[0] = UA_PubSubTransportLayerUDPMP();
     config->pubsubTransportLayersSize++;
     UA_Server *server = UA_Server_new(config);
