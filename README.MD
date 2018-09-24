@@ -15,7 +15,7 @@ It is aimed to compile OPC UA publisher on ESP32 board (xtensa toolchain). Publi
 
 It is required to have ESP-IDF (https://github.com/espressif/esp-idf) and this repo can be directly cloned under examples. Open62541 is not required, open62541.c and open62541.h files as component handle the open62541 functionality but it is suggested for those who wants to know more about the OPC UA side.
 
-Also, if you want to use your own open62541.c/.h, it is required to make the changes stated on https://github.com/cmbahadir/opcua-pubsub-esp32/blob/master/main/README after building with the required cmake options, otherwise xtensa-toolchain raises compile errors.
+Also, if you want to use your own open62541.c/.h, it is required to make the changes stated on https://github.com/cmbahadir/opcua-pubsub-esp32/blob/master/components/open62541lib/README.md after building with the required cmake options, otherwise xtensa-toolchain raises compile errors.
 
 - I haven't analyzed the required modifications on open62541.c/.h  files, these are just a result of trial and error process, so an explanatory contribution would be great. :)
 
