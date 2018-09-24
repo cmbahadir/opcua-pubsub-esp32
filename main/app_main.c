@@ -81,33 +81,16 @@ addDataSetField(UA_Server *server) {
     UA_StatusCode addNodeStat = UA_Server_addNode_begin(server, 
                                                         UA_NODECLASS_VARIABLE,
                                                         UA_NODEID_NUMERIC(1, 6001),
-                                                        //parentNodeId,
                                                         UA_NODEID_NUMERIC(0, UA_NS0ID_PUBLISHSUBSCRIBE),
                                                         UA_NODEID_NUMERIC(0, 47),
                                                         UA_QUALIFIEDNAME(1, "Test"),
                                                         UA_NODEID_NUMERIC(0, 63),  
-                                                        //UA_NODEID_NUMERIC(0, UA_NS0ID_SERVERSTATUSTYPE_TFCURRENTTEMP),
-                                                        //UA_NODEID_NUMERIC(0, UA_NS0ID_PUBLISHSUBSCRIBE), 
-                                                        //UA_NODEID_NUMERIC(0, UA_NS0ID_HASPUBSUBCONNECTION),
-                                                        //UA_QUALIFIEDNAME(0, "Connection Name"), 
-                                                        //UA_NODEID_NUMERIC(0, UA_NS0ID_PUBSUBCONNECTIONTYPE), 
                                                         (const UA_NodeAttributes*)&attr, 
                                                         &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES], 
                                                         NULL, 
                                                         &createdNodeId);
     
     readTemperature(server, createdNodeId);
-
-
-    //UA_NodeId urlNode = findSingleChildNode(server, UA_QUALIFIEDNAME(0, "Url"),UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT), createdNodeId);
-
-    //UA_Int32 myInteger = 10;
-    //UA_Variant value;
-    //UA_Variant_init(&value);
-    //UA_Variant_setScalar(&value, &myInteger, &UA_TYPES[UA_TYPES_INT32]);
-    //UA_StatusCode stat = UA_Server_writeValue(server, createdNodeId, value);
-    //printf("%d : ", stat);
-    
     UA_NodeId dataSetFieldIdent;
     UA_DataSetFieldConfig dataSetFieldConfig;
     memset(&dataSetFieldConfig, 0, sizeof(UA_DataSetFieldConfig));
@@ -115,12 +98,9 @@ addDataSetField(UA_Server *server) {
     dataSetFieldConfig.field.variable.fieldNameAlias = UA_STRING("Server localtime");
     dataSetFieldConfig.field.variable.promotedField = UA_FALSE;
     dataSetFieldConfig.field.variable.publishParameters.publishedVariable = createdNodeId;
-    //dataSetFieldConfig.field.variable.publishParameters.publishedVariable = UA_NODEID_NUMERIC(0, UA_NS0ID_SERVER_SERVERSTATUS_CURRENTTIME);
     dataSetFieldConfig.field.variable.publishParameters.attributeId = UA_ATTRIBUTEID_VALUE;
     
     UA_DataSetFieldResult addDataSetFieldStat = UA_Server_addDataSetField(server, publishedDataSetIdent, &dataSetFieldConfig, &dataSetFieldIdent);
-    //printf("%d : ", addNodeStat);
-    //printf("%d : ", addDataSetFieldStat.result);
 }
 
 /**
