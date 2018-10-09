@@ -21,9 +21,10 @@
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
 #define TAG "APP_MAIN"
+#define DHT_GPIO 4
 
 static UA_Boolean running = true;
-static void readTemperature(UA_Server *server, UA_NodeId nodeid);
+static void parseTemperature(UA_Server *server, UA_NodeId nodeid);
 
 UA_NodeId connectionIdent, publishedDataSetIdent, writerGroupIdent;
 
@@ -91,7 +92,7 @@ addDataSetField(UA_Server *server) {
                                                         NULL, 
                                                         &createdNodeId);
     
-    readTemperature(server, createdNodeId);
+    parseTemperature(server, createdNodeId);
     UA_NodeId dataSetFieldIdent;
     UA_DataSetFieldConfig dataSetFieldConfig;
     memset(&dataSetFieldConfig, 0, sizeof(UA_DataSetFieldConfig));
@@ -144,17 +145,11 @@ addDataSetWriter(UA_Server *server) {
                                &dataSetWriterConfig, &dataSetWriterIdent);
 }
 
-static void readTemperature(UA_Server *server, const UA_NodeId nodeid) 
+static void parseTemperature(UA_Server *server, const UA_NodeId nodeid) 
 {
-    //Read Temperature from DHT-22 Sensor
-    char buf[10];
-    int ret_ReadDHT = readDHT();
-    float temperatureFromSensor;
-    setDHTgpio(4);
-    temperatureFromSensor = getTemperature();
-    gcvt(temperatureFromSensor,4,buf);
+    char* buf;
+    buf = ReadTemperature(DHT_GPIO);
     UA_String temperature = UA_STRING(buf);
-
     //UA_String temperature = UA_STRING("Temperature as string!"); //Change here as read numeric temperature value
     UA_Variant value;
     UA_Variant_setScalar(&value, &temperature, &UA_TYPES[UA_TYPES_STRING]);
