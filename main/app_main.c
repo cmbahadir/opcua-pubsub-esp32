@@ -146,7 +146,16 @@ addDataSetWriter(UA_Server *server) {
 
 static void readTemperature(UA_Server *server, const UA_NodeId nodeid) 
 {
-    UA_String temperature = UA_STRING("Temperature as string!"); //Change here as read numeric temperature value
+    //Read Temperature from DHT-22 Sensor
+    char buf[10];
+    int ret_ReadDHT = readDHT();
+    float temperatureFromSensor;
+    setDHTgpio(4);
+    temperatureFromSensor = getTemperature();
+    gcvt(temperatureFromSensor,4,buf);
+    UA_String temperature = UA_STRING(buf);
+
+    //UA_String temperature = UA_STRING("Temperature as string!"); //Change here as read numeric temperature value
     UA_Variant value;
     UA_Variant_setScalar(&value, &temperature, &UA_TYPES[UA_TYPES_STRING]);
     UA_Server_writeValue(server, nodeid, value);
