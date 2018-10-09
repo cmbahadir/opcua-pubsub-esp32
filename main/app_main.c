@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <lwip/sockets.h>
 #include "open62541.h"
+#include "DHT22.h"
 
 
 #define DEFAULT_SSID CONFIG_WIFI_SSID
