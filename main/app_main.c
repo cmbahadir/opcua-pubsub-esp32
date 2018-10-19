@@ -147,9 +147,14 @@ addDataSetWriter(UA_Server *server) {
 
 static void parseTemperature(UA_Server *server, const UA_NodeId nodeid) 
 {
-    char* buf;
-    buf = ReadTemperature(DHT_GPIO);
+    float temp;
+    char *buf = UA_malloc(sizeof(char)*512);
+    temp = ReadTemperature(DHT_GPIO);
+    printf("Returned Temperature: %.6f\n",temp);
+    snprintf(buf,512,"%f",temp);
+	printf("Read Temperature : %s\n",buf);
     UA_String temperature = UA_STRING(buf);
+    
     //UA_String temperature = UA_STRING("Temperature as string!"); //Change here as read numeric temperature value
     UA_Variant value;
     UA_Variant_setScalar(&value, &temperature, &UA_TYPES[UA_TYPES_STRING]);
