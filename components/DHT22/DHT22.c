@@ -233,7 +233,7 @@ uint8_t bitInx = 7;
 float ReadTemperature(int sensor_gpio){
 	float temperatureFromSensor, error;
     int ret_ReadDHT = readDHT();
-    if (ret_ReadDHT == DHT_OK){
+    if (ret_ReadDHT != DHT_OK){
 		error = 100;
 		return error;
 	}
