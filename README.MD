@@ -1,23 +1,20 @@
 # OPC UA Publisher on ESP32
 
-It is aimed to compile OPC UA publisher on ESP32 board (xtensa toolchain). Published data is the ambient temperature, measured with a DHT-22 Sensor. You can see the sensor code at /components/DHT22.c lines 233 - 238.
+It is aimed to compile OPC UA publisher on ESP32 board (xtensa toolchain). Published data is the ambient temperature, measured with a DHT-22 Sensor. You can see the sensor code at /components/DHT22.c lines 233 - 245.
 
-    char* ReadTemperature(int sensor_gpio){
-        char buf[10];
-      char* error[20];
-      float temperatureFromSensor;
-        int ret_ReadDHT = readDHT();
-        if (ret_ReadDHT != DHT_OK){
-        *error = "Sensor Error!";
-        return *error;
+      float ReadTemperature(int sensor_gpio){
+        float temperatureFromSensor, error;
+          int ret_ReadDHT = readDHT();
+          if (ret_ReadDHT != DHT_OK){
+          error = 100;
+          return error;
+        }
+          else {
+          setDHTgpio(4);
+          temperatureFromSensor = getTemperature();
+          return temperatureFromSensor;
+        }
       }
-        else {
-        setDHTgpio(4);
-        temperatureFromSensor = getTemperature();
-          gcvt(temperatureFromSensor,4,buf);
-        return buf;
-      }
-    }
 
 ## Getting Started
 
@@ -37,4 +34,4 @@ Also, if you want to build open62541.c/.h/.lib from source, beware of the change
 This project is licensed under the Mozilla Public License Version 2.0 which is inherited from Open62541 project - see the [LICENSE.md](LICENSE.md) file for details
 
 ### Caution
-This code is written for experimental purposes.I do NOT suggest to use it on a real world application.Also ı do not claim any reponsibility for the consequences.
+This code is written for experimental purposes.It is NOT suggested to use it on a real industrial application. Also ı do not claim any reponsibility for the consequences.
