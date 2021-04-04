@@ -35,7 +35,7 @@
 #define DHT_GPIO 4
 
 /* MDNS ENABLE */
-#define ENABLE_MDNS
+// #define ENABLE_MDNS
 
 static UA_Boolean running = true;
 static UA_Boolean sntp_initialized = false;
@@ -46,11 +46,10 @@ static void parseTemperature(UA_Server *server, UA_NodeId nodeid);
 
 UA_NodeId connectionIdent, publishedDataSetIdent, writerGroupIdent;
 
+
 static void
 addPubSubConnection(UA_Server *server)
 {
-    /* Details about the connection configuration and handling are located
-     * in the pubsub connection tutorial */
     UA_PubSubConnectionConfig connectionConfig;
     memset(&connectionConfig, 0, sizeof(connectionConfig));
     connectionConfig.name = UA_STRING("UDP-UADP Connection 1");
@@ -58,39 +57,25 @@ addPubSubConnection(UA_Server *server)
     connectionConfig.enabled = UA_TRUE;
     UA_NetworkAddressUrlDataType networkAddressUrl = {UA_STRING_NULL, UA_STRING("opc.udp://224.0.0.22:4840/")};
     UA_Variant_setScalar(&connectionConfig.address, &networkAddressUrl, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
-    connectionConfig.publisherId.numeric = UA_UInt32_random();
-    UA_StatusCode addPBConnStat = UA_Server_addPubSubConnection(server, &connectionConfig, &connectionIdent);
-    printf("Add PubSub Connection Status Code: %d\n", addPBConnStat);
+    connectionConfig.publisherId.numeric = 2234;
+    UA_Server_addPubSubConnection(server, &connectionConfig, &connectionIdent);
 }
 
-/**
- * **PublishedDataSet handling**
- * The PublishedDataSet (PDS) and PubSubConnection are the toplevel entities and can exist alone. The PDS contains
- * the collection of the published fields.
- * All other PubSub elements are directly or indirectly linked with the PDS or connection.
- */
+
 static void
 addPublishedDataSet(UA_Server *server)
 {
-    /* The PublishedDataSetConfig contains all necessary public
-    * informations for the creation of a new PublishedDataSet */
     UA_PublishedDataSetConfig publishedDataSetConfig;
     memset(&publishedDataSetConfig, 0, sizeof(UA_PublishedDataSetConfig));
     publishedDataSetConfig.publishedDataSetType = UA_PUBSUB_DATASET_PUBLISHEDITEMS;
     publishedDataSetConfig.name = UA_STRING("Demo PDS");
-    /* Create new PublishedDataSet based on the PublishedDataSetConfig. */
-    UA_AddPublishedDataSetResult s = UA_Server_addPublishedDataSet(server, &publishedDataSetConfig, &publishedDataSetIdent);
-    printf("Add PubSub Connection Status Code: %d\n", s.addResult);
+    UA_Server_addPublishedDataSet(server, &publishedDataSetConfig, &publishedDataSetIdent);
 }
 
-/**
- * **DataSetField handling**
- * The DataSetField (DSF) is part of the PDS and describes exactly one published field.
- */
+
 static void
 addDataSetField(UA_Server *server)
 {
-    /* Add a field to the previous created PublishedDataSet */
     UA_NodeId createdNodeId;
     UA_VariableAttributes attr = UA_VariableAttributes_default;
     attr.minimumSamplingInterval = 0.000000;
@@ -118,7 +103,7 @@ addDataSetField(UA_Server *server)
     UA_DataSetFieldConfig dataSetFieldConfig;
     memset(&dataSetFieldConfig, 0, sizeof(UA_DataSetFieldConfig));
     dataSetFieldConfig.dataSetFieldType = UA_PUBSUB_DATASETFIELD_VARIABLE;
-    dataSetFieldConfig.field.variable.fieldNameAlias = UA_STRING("Server localtime");
+    dataSetFieldConfig.field.variable.fieldNameAlias = UA_STRING("Temperature");
     dataSetFieldConfig.field.variable.promotedField = UA_FALSE;
     dataSetFieldConfig.field.variable.publishParameters.publishedVariable = createdNodeId;
     dataSetFieldConfig.field.variable.publishParameters.attributeId = UA_ATTRIBUTEID_VALUE;
@@ -126,15 +111,10 @@ addDataSetField(UA_Server *server)
     UA_Server_addDataSetField(server, publishedDataSetIdent, &dataSetFieldConfig, &dataSetFieldIdent);
 }
 
-/**
- * **WriterGroup handling**
- * The WriterGroup (WG) is part of the connection and contains the primary configuration
- * parameters for the message creation.
- */
+
 static void
 addWriterGroup(UA_Server *server)
 {
-    /* Now we create a new WriterGroupConfig and add the group to the existing PubSubConnection. */
     UA_WriterGroupConfig writerGroupConfig;
     memset(&writerGroupConfig, 0, sizeof(UA_WriterGroupConfig));
     writerGroupConfig.name = UA_STRING("Demo WriterGroup");
@@ -142,22 +122,23 @@ addWriterGroup(UA_Server *server)
     writerGroupConfig.enabled = UA_FALSE;
     writerGroupConfig.writerGroupId = 100;
     writerGroupConfig.encodingMimeType = UA_PUBSUB_ENCODING_UADP;
-    /* The configuration flags for the messages are encapsulated inside the
-     * message- and transport settings extension objects. These extension objects
-     * are defined by the standard. e.g. UadpWriterGroupMessageDataType */
+    writerGroupConfig.messageSettings.encoding             = UA_EXTENSIONOBJECT_DECODED;
+    writerGroupConfig.messageSettings.content.decoded.type = &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE];
+    UA_UadpWriterGroupMessageDataType *writerGroupMessage  = UA_UadpWriterGroupMessageDataType_new();
+    writerGroupMessage->networkMessageContentMask          = (UA_UadpNetworkMessageContentMask)(UA_UADPNETWORKMESSAGECONTENTMASK_PUBLISHERID |
+                                                              (UA_UadpNetworkMessageContentMask)UA_UADPNETWORKMESSAGECONTENTMASK_GROUPHEADER |
+                                                              (UA_UadpNetworkMessageContentMask)UA_UADPNETWORKMESSAGECONTENTMASK_WRITERGROUPID |
+                                                              (UA_UadpNetworkMessageContentMask)UA_UADPNETWORKMESSAGECONTENTMASK_PAYLOADHEADER);
+    writerGroupConfig.messageSettings.content.decoded.data = writerGroupMessage;
     UA_Server_addWriterGroup(server, connectionIdent, &writerGroupConfig, &writerGroupIdent);
+    UA_Server_setWriterGroupOperational(server, writerGroupIdent);
+    UA_UadpWriterGroupMessageDataType_delete(writerGroupMessage);
 }
 
-/**
- * **DataSetWriter handling**
- * A DataSetWriter (DSW) is the glue between the WG and the PDS. The DSW is linked to exactly one
- * PDS and contains additional informations for the message generation.
- */
+
 static void
 addDataSetWriter(UA_Server *server)
 {
-    /* We need now a DataSetWriter within the WriterGroup. This means we must
-     * create a new DataSetWriterConfig and add call the addWriterGroup function. */
     UA_NodeId dataSetWriterIdent;
     UA_DataSetWriterConfig dataSetWriterConfig;
     memset(&dataSetWriterConfig, 0, sizeof(UA_DataSetWriterConfig));
@@ -171,15 +152,11 @@ addDataSetWriter(UA_Server *server)
 static void parseTemperature(UA_Server *server, const UA_NodeId nodeid)
 {
     float temp;
+    UA_Variant value;
     char *buf = UA_malloc(sizeof(char) * 512);
     temp = ReadTemperature(DHT_GPIO);
-    printf("Returned Temperature: %.6f\n", temp);
     snprintf(buf, 512, "%f", temp);
-    printf("Read Temperature : %s\n", buf);
     UA_String temperature = UA_STRING(buf);
-
-    //UA_String temperature = UA_STRING("Temperature as string!"); //Change here as read numeric temperature value
-    UA_Variant value;
     UA_Variant_setScalar(&value, &temperature, &UA_TYPES[UA_TYPES_STRING]);
     UA_Server_writeValue(server, nodeid, value);
 }
@@ -213,22 +190,20 @@ UA_ServerConfig_setUriName(UA_ServerConfig *uaServerConfig, const char *uri, con
 
 void opcua_task(void *pvParameter)
 {
-    UA_Int32 sendBufferSize = 16384;
-    UA_Int32 recvBufferSize = 16384;
-
     ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
 
     UA_Server *server = UA_Server_new();
     UA_ServerConfig *config = UA_Server_getConfig(server);
     UA_ServerConfig_setDefault(config);
-    ESP_LOGI(MAIN_TAG, "Fire up OPC UA Server.");
 
-    UA_ServerConfig_setMinimalCustomBuffer(config, 4840, 0, sendBufferSize, recvBufferSize);
-    
+    // config->sendBufferSize = 16384;
+    // config->recvBufferSize = 16384;
+    // UA_ServerConfig_setMinimalCustomBuffer(config, 4841, 0, sendBufferSize, recvBufferSize);
     UA_ServerConfig_addPubSubTransportLayer(config, UA_PubSubTransportLayerUDPMP());
 
-    const char *appUri = "open62541.esp32.server";
-    UA_String hostName = UA_STRING("opcua-esp32");
+    const char *appUri = "open62541.esp32.publisher";
+    UA_String hostName = UA_STRING("publisher-esp32");
+    config->customHostname = hostName;
     
 #ifdef ENABLE_MDNS
     config->mdnsEnabled = true;
@@ -240,12 +215,7 @@ void opcua_task(void *pvParameter)
     config->mdnsConfig.serverCapabilities = caps;
     // We need to set the default IP address for mDNS since internally it's not able to detect it.
     tcpip_adapter_ip_info_t default_ip;
-    
-    #ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
-    tcpip_adapter_if_t tcpip_if = TCPIP_ADAPTER_IF_ETH;
-    #else
     tcpip_adapter_if_t tcpip_if = TCPIP_ADAPTER_IF_STA;
-    #endif
 
     esp_err_t ret = tcpip_adapter_get_ip_info(tcpip_if, &default_ip);
     if ((ESP_OK == ret) && (default_ip.ip.addr != INADDR_ANY))
@@ -259,8 +229,7 @@ void opcua_task(void *pvParameter)
         ESP_LOGI(MAIN_TAG, "Could not get default IP Address!");
     }
 #endif
-    UA_ServerConfig_setUriName(config, appUri, "OPC_UA_Server_ESP32");
-    UA_ServerConfig_setCustomHostname(config, hostName);
+    UA_ServerConfig_setUriName(config, appUri, "OPC_UA_Publisher_ESP32");
 
     /* Add Pub/Sub Datasets */
     addPubSubConnection(server);
@@ -269,7 +238,6 @@ void opcua_task(void *pvParameter)
     addWriterGroup(server);
     addDataSetWriter(server);
 
-    ESP_LOGI(MAIN_TAG, "Heap Left : %d", xPortGetFreeHeapSize());
     UA_StatusCode retval = UA_Server_run_startup(server);
     if (retval == UA_STATUSCODE_GOOD)
     {
@@ -284,10 +252,12 @@ void opcua_task(void *pvParameter)
     ESP_ERROR_CHECK(esp_task_wdt_delete(NULL));
 }
 
+
 void time_sync_notification_cb(struct timeval *tv)
 {
     ESP_LOGI(SNTP_TAG, "Notification of a time synchronization event");
 }
+
 
 static void initialize_sntp(void)
 {
@@ -298,6 +268,7 @@ static void initialize_sntp(void)
     sntp_init();
     sntp_initialized = true;
 }
+
 
 static bool get_time(void)
 {
@@ -317,6 +288,7 @@ static bool get_time(void)
     ESP_ERROR_CHECK(esp_task_wdt_delete(NULL));
     return timeinfo.tm_year > (2016 - 1900);
 }
+
 
 static void opc_event_handler(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data)
@@ -344,29 +316,15 @@ static void opc_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+
 static void disconnect_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
 }
 
+
 static void connect_scan(void)
 {
-    // tcpip_adapter_init();
-    // ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-
-    // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    // ESP_ERROR_CHECK( esp_wifi_init(&cfg));
-    // wifi_config_t wifi_config = {
-    //     .sta = {
-    //         .ssid = DEFAULT_SSID,
-    //         .password = DEFAULT_PWD
-    //     },
-    // };
-
-    // ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    // ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    // ESP_ERROR_CHECK(esp_wifi_start());
-
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_task_wdt_init(10, true));
@@ -379,9 +337,9 @@ static void connect_scan(void)
     ESP_ERROR_CHECK(example_connect());
 }
 
+
 void app_main(void)
 {
-
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES)
@@ -392,6 +350,4 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     connect_scan();
-
-    //xTaskCreate(&opcua_task, "opcua_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

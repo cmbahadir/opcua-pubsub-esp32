@@ -143,6 +143,13 @@
 #ifndef ARCH_COMMON_FREERTOS62541_H_
 #define ARCH_COMMON_FREERTOS62541_H_
 
+#include <lwip/netdb.h>
+#include <esp_log.h>
+
+/* Handling getaddrinfo in ESP32 declaration.*/
+int esp_getaddrinfo(const char *nodename, const char *servername,
+                 const struct addrinfo *hints, struct addrinfo **res);
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -252,7 +259,7 @@ extern int UA_gethostname(char* name, size_t len);
 extern int UA_getsockname((int s, struct sockaddr *name, socklen_t *namelen);
 #endif
 #ifndef UA_getaddrinfo
-#define UA_getaddrinfo lwip_getaddrinfo
+#define UA_getaddrinfo esp_getaddrinfo
 #else
 extern int UA_getaddrinfo(const char *nodename, const char *servname,
                  const struct addrinfo *hints, struct addrinfo **res);
