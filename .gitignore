@@ -3,3 +3,6 @@
 
 #Ignore sdkconfig if its not changed
 sdkconfig
+
+#Ignore IDE files
+.vscode
