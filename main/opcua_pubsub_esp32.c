@@ -27,15 +27,11 @@
 #define SNTP_TAG "SNTP"
 #define MEMORY_TAG "MEMORY"
 
-/* WIFI CONFIG */
-#define DEFAULT_SSID CONFIG_WIFI_SSID
-#define DEFAULT_PWD CONFIG_WIFI_PASSWORD
-
 /* DHT SENSOR PIN*/
 #define DHT_GPIO 4
 
 /* MDNS ENABLE */
-// #define ENABLE_MDNS
+#define ENABLE_MDNS
 
 static UA_Boolean running = true;
 static UA_Boolean sntp_initialized = false;
@@ -89,7 +85,7 @@ addDataSetField(UA_Server *server)
     UA_Server_addNode_begin(server,
                             UA_NODECLASS_VARIABLE,
                             UA_NODEID_NUMERIC(1, 6001),
-                            UA_NODEID_NUMERIC(0, UA_NS0ID_PUBLISHSUBSCRIBE),
+                            UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
                             UA_NODEID_NUMERIC(0, 47),
                             UA_QUALIFIEDNAME(1, "Test"),
                             UA_NODEID_NUMERIC(0, 63),
@@ -194,12 +190,18 @@ void opcua_task(void *pvParameter)
 
     UA_Server *server = UA_Server_new();
     UA_ServerConfig *config = UA_Server_getConfig(server);
-    UA_ServerConfig_setDefault(config);
 
-    // config->sendBufferSize = 16384;
-    // config->recvBufferSize = 16384;
-    // UA_ServerConfig_setMinimalCustomBuffer(config, 4841, 0, sendBufferSize, recvBufferSize);
-    UA_ServerConfig_addPubSubTransportLayer(config, UA_PubSubTransportLayerUDPMP());
+    UA_Int32 sendBufferSize = 16000;
+    UA_Int32 recvBufferSize = 16000;
+    UA_ServerConfig_setMinimalCustomBuffer(config, 4840, 0, sendBufferSize, recvBufferSize);
+
+    config->pubSubConfig.transportLayers = (UA_PubSubTransportLayer *) UA_malloc(sizeof(UA_PubSubTransportLayer));
+    if(!config->pubSubConfig.transportLayers) {
+        UA_ServerConfig_clean(config);
+        return;
+    }
+    config->pubSubConfig.transportLayers[0] = UA_PubSubTransportLayerUDPMP();
+    config->pubSubConfig.transportLayersSize++;
 
     const char *appUri = "open62541.esp32.publisher";
     UA_String hostName = UA_STRING("publisher-esp32");
